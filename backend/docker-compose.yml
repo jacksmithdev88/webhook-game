@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  web:
+    container_name: "ms.drinking-game-backend.local"
+    restart: unless-stopped
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+    networks: 
+      - app
+networks: 
+  app: 
+    name: app
+    external: true  

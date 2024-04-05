@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Socket.IO test</title>
+        <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+        <script>
+            window.onload = function() {
+                const socket = io('http://localhost:3000');
+                let currentRoomCode = null; 
+                let isAdmin = false;
+
+               
+                if(localStorage.getItem('username')) {
+                    document.getElementById('login').style.display = 'none';
+                    document.getElementById('loggedInAs').innerText = 'Logged in as: ' + localStorage.getItem('username');
+                    // Show the logout button
+                    document.getElementById('logoutButton').style.display = 'block';
+                    document.getElementById("loggedInAs").innerText = `You are logged in as ${localStorage.getItem('username')} `;
+                }
+
+                document.getElementById("createButton").addEventListener("click", () => { 
+                    // Send a request to the server to create a new room
+                    fetch('http://localhost:3000/room/create', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ',
+                        },
+                        body: JSON.stringify({ "username": localStorage.getItem('username') }),
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Use the returned room code to join the room
+                        currentRoomCode = data.roomCode;
+                        const newUsername = localStorage.getItem('username');
+
+                        socket.emit('joinRoom', { roomCode: currentRoomCode, username: newUsername });      
+                        document.getElementById('leaveRoomButton').style.display = 'block';        
+                    });
+                });
+                
+                document.getElementById("loginButton").addEventListener("click", () => { 
+                    const username = document.getElementById("loginUsername").value;
+                    const password = document.getElementById("loginPassword").value;
+
+                    // Send a login request to the server
+                    fetch('http://localhost:3000/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ "username": username, "password": password }),
+                    })
+                    .then(response => response.json())
+                    .then(data => {                       
+                        localStorage.setItem('jwt', data.jwt);
+                        localStorage.setItem('username', username);
+                        document.getElementById('logoutButton').style.display = 'block';
+                        document.getElementById("loggedInAs").innerText = `You are logged in as ${localStorage.getItem('username')} `;
+                        document.getElementById('loggedInAs').innerText = 'Logged in as: ' + localStorage.getItem('username');
+                        document.getElementById('login').style.display = 'none';                        
+                    });
+                });
+
+                document.getElementById("standButton").addEventListener("click", () => { 
+                    socket.emit('user-blackjack-stand', { roomCode: currentRoomCode, username: localStorage.getItem('username') });                
+                });
+
+                document.getElementById('loggedInAs').innerText = 'Logged in as: ' + localStorage.getItem('username');
+
+
+                document.getElementById("joinButton").addEventListener("click", () => { 
+                    currentRoomCode = document.getElementById("roomCode").value;
+                    const newUsername = localStorage.getItem('username');
+
+                    socket.emit('joinRoom', { roomCode: currentRoomCode, username: newUsername });      
+                    document.getElementById('leaveRoomButton').style.display = 'block';        
+                });
+
+                socket.on('usernameUpdate', ({ success, message, userList }) => {
+                    if (success) {
+                        localStorage.setItem('username', newUsername);
+                    }
+                    alert(message);
+                    document.getElementById('userList').innerHTML = userList.map(user => `<div>${user}</div>`).join('');
+                });
+
+                document.getElementById("startNewGameButton").addEventListener("click", () => { 
+                    console.log("Starting new game.");
+                    socket.emit('startNewGame', { roomCode: currentRoomCode, username: localStorage.getItem('username') });                
+                });
+            
+                socket.on('gameOver', (data) => { 
+                    console.log(data);
+                    document.getElementById('winnerDiv').style.display = 'block';
+                    document.getElementById('winnerPlayer').innerText = data.winner.username;
+                    document.getElementById('startNewGameButton').style.display = 'block';
+                })
+
+                socket.on('userListUpdate', (userList) => {
+                    console.log('Updated user list:', userList);
+                    document.getElementById('userList').innerHTML = userList.map(user => `<div>${user}</div>`).join('');
+
+                    isAdmin = userList[0] === localStorage.getItem('username');
+                    document.getElementById('startGameButton').style.display = isAdmin ? 'block' : 'none';
+                });
+
+
+                document.getElementById("startGameButton").addEventListener("click", () => { 
+                    console.log("Starting game.");
+                    socket.emit('startGame', { roomCode: currentRoomCode, username: localStorage.getItem('username') });                
+                });
+
+                socket.on('gameStart', (data) => {
+                    document.getElementById('winnerDiv').style.display = 'none'; // Hide the winner div
+                    document.getElementById('startNewGameButton').style.display = 'none'; // Hide the start new game button
+                    document.getElementById('currentPlayer').innerText = data.game.currentPlayer;
+                    document.getElementById('playerScore').innerText = '';
+                    document.getElementById('playerCards').innerHTML = '';
+                    document.getElementById('gameRoomCode').innerText = currentRoomCode;
+                    document.getElementById('startGame').style.display = 'none';
+                    document.getElementById('gameScreen').style.display = 'block';
+
+                    // Find the score object of the current user
+                    const currentUser = localStorage.getItem('username');
+                    const currentUserScoreObject = data.game.playerScores.find(player => player.username === currentUser);
+
+                    // Display the score
+                    document.getElementById('playerScore').innerText = `Score: ${currentUserScoreObject.score}`;
+
+                    // Display the cards
+                    const cardsContainer = document.getElementById('playerCards');
+                    cardsContainer.innerHTML = '';
+                    currentUserScoreObject.cards.forEach(card => {
+                        const cardElement = document.createElement('div');
+                        cardElement.innerText = `${card.value} of ${card.suit}`;
+                        cardsContainer.appendChild(cardElement);
+                    });
+                });
+
+                socket.on('gameInProgress', (data) => {
+                    alert("Game is already in progress.");
+                });
+
+                socket.on('bust', ({ username }) => {
+                    if (username === localStorage.getItem('username')) {
+                        console.log("You have busted!");
+                    } else {
+                        console.log(`${username} has busted!`);
+                    }
+                });
+
+                document.getElementById("logoutButton").addEventListener("click", () => { 
+                    // Clear the username from local storage
+                    localStorage.removeItem('username');
+                    // Hide the logout button
+                    document.getElementById('logoutButton').style.display = 'none';
+                    document.getElementById("loggedInAs").innerText = ``;
+                    // Show the login form
+                    document.getElementById('login').style.display = 'block';
+                    // Clear the logged in as text
+                    document.getElementById('loggedInAs').innerText = '';
+                });
+
+                document.getElementById("leaveRoomButton").addEventListener("click", () => { 
+                    const currentUsername = localStorage.getItem('username');
+
+                    // Emit the 'leaveRoom' event to the server
+                    socket.emit('leaveRoom', { roomCode: currentRoomCode, username: currentUsername });
+
+                    // Clear the room information
+                    currentRoomCode = null;
+
+                    // Hide the leave room button
+                    document.getElementById('leaveRoomButton').style.display = 'none';
+                    document.getElementById("joinButton").style.display = 'block';
+                    document.getElementById("userList").innerHTML = ``;
+                    document.getElementById("startGameButton").style.display = "none"
+                });
+
+                document.getElementById("hitButton").addEventListener("click", () => { 
+                    socket.emit('user-blackjack-hit', { roomCode: currentRoomCode, username: localStorage.getItem('username') });                
+                });
+
+                socket.on('blackjack-hit', (data) => {
+
+                    const currentUser = localStorage.getItem('username');
+                    const currentUserScoreObject = data.game.playerScores.find(player => player.username === currentUser);
+
+                    document.getElementById('currentPlayer').innerText = data.game.currentPlayer;
+                    document.getElementById('playerScore').innerText = `Score: ${currentUserScoreObject.score}`;
+
+                    // Display the cards
+                    const cardsContainer = document.getElementById('playerCards');
+                    cardsContainer.innerHTML = '';
+                    currentUserScoreObject.cards.forEach(card => {
+                        const cardElement = document.createElement('div');
+                        cardElement.innerText = `${card.value} of ${card.suit}`;
+                        cardsContainer.appendChild(cardElement);
+                    });
+                });
+
+                socket.on('blackjack-stand', (data) => { 
+                    document.getElementById('currentPlayer').innerText = data.game.currentPlayer;
+                })
+            }
+        </script>
+    </head>
+    <body>
+        <div id="login">
+            <input type="text" id="loginUsername" placeholder="Enter your username">
+            <input type="password" id="loginPassword" placeholder="Enter your password">
+            <button id="loginButton">Login</button>
+        </div>
+        <div id="loggedInAs"></div>
+        <button id="logoutButton">Logout</button>
+
+        <div id="startGame">
+            <p id="loggedInAs"></p>
+            <input type="text" id="roomCode" placeholder="Enter room code">
+            <button id="createButton">Create Room</button>
+            <button id="joinButton">Join Room</button>
+            <button id="leaveRoomButton" style="display: none;">Leave Room</button>
+            <div id="userList"></div>
+
+            <button id="startGameButton" style="display: none;">Start Game</button>
+        </div>
+
+        <div id="gameScreen" style="display: none;">
+            <h1>Game Screen <span id="gameRoomCode"></span></h1> 
+            <h2 id="winnerDiv" style="display: none;">Winner: <span id="winnerPlayer"></span></h2>
+            <h2>It is currently <span id="currentPlayer"></span>'s go</h2>
+        
+            <div id="playerScore"></div>
+            <div id="playerCards"></div>
+        
+            <button id="hitButton">Hit</button>
+            <button id="standButton">Stand</button>
+
+            <button id="startNewGameButton" style="display: none;">Start New Game</button>
+        </div>
+    </body>
+</html>
