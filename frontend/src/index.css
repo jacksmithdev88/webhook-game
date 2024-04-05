@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body { 
+    font-family: 'Nunito', sans-serif;
+    width: 75%;
+    margin: 0 auto;
+    text-align: center;
+    background-color: #c8dbd7;
+    overflow: auto;
+}
+
+button { 
+    padding: 12px 32px;
+    border-radius: 10px;
+    border: none;
+    background-color: #eb2546;
+    color: white;
+    margin: 5px;
+    width: 200px; /* Set the width */
+    height: 60px; /* Set the height */
+    text-align: center; /* Center the text */
+    white-space: nowrap; /* Prevent the text from wrapping */
+    overflow: hidden; /* Hide any text that overflows the button */
+    text-overflow: ellipsis; /* Add an ellipsis (...) when the text overflows */
+}
+
+input { 
+    padding: 10px 20px;
+    border-radius: 10px;
+
+}
