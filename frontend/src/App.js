@@ -11,14 +11,17 @@ import PublicRoute from './components/publicRoute.js';
 import BlackjackPage from './pages/BlackjackPage.js';
 import RingOfFirePage from './pages/RingOfFirePage.js';
 import { SocketContext } from './context/SocketContext.js';
+import { RoomContext } from './context/RoomContext.js';
 import { io } from 'socket.io-client';
 import { GameDataContext } from './context/GameDataContext.js';
+import RoomLobbyPage from './pages/RoomLobby.js';
 
 function App() {
   const storedUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
   const [user, setUser] = useState(storedUser);
   const [gameData, setGameData] = useState(null);
   const [socket, setSocket] = useState(null);
+  const [roomCode, setRoomCode] = useState(null);
 
   useEffect(() => {
     const newSocket = io('http://localhost:3000');
@@ -28,24 +31,27 @@ function App() {
   }, []);
 
   return (
-    <GameDataContext.Provider value={{ gameData, setGameData }}>
-      <SocketContext.Provider value={ socket }>
-        <UserContext.Provider value={{ user, setUser }}>
-          <Router> 
-            <div className="App">
-              <Routes>
-                <Route path="/" element={<PublicRoute><HomePage /></PublicRoute>} />
-                <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
-                <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-                <Route path="/home" element={<PrivateRoute><LobbyPage /></PrivateRoute>} />
-                <Route path="/game/start/blackjack" element={<PrivateRoute><BlackjackPage></BlackjackPage></PrivateRoute>} />
-                <Route path="/game/start/ring-of-fire" element={<PrivateRoute><RingOfFirePage></RingOfFirePage></PrivateRoute>} />
-              </Routes>
-            </div>
-          </Router>
-        </UserContext.Provider>
-      </SocketContext.Provider>
-    </GameDataContext.Provider>
+    <RoomContext.Provider value={{ roomCode, setRoomCode }}>
+      <GameDataContext.Provider value={{ gameData, setGameData }}>
+        <SocketContext.Provider value={ socket }>
+          <UserContext.Provider value={{ user, setUser }}>
+            <Router> 
+              <div className="App">
+                <Routes>
+                  <Route path="/" element={<PublicRoute><HomePage /></PublicRoute>} />
+                  <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+                  <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+                  <Route path="/home" element={<PrivateRoute><LobbyPage /></PrivateRoute>} />
+                  <Route path="/game/start/blackjack" element={<PrivateRoute><BlackjackPage></BlackjackPage></PrivateRoute>} />
+                  <Route path="/game/start/ring-of-fire" element={<PrivateRoute><RingOfFirePage></RingOfFirePage></PrivateRoute>} />
+                  <Route path="/game-select" element={<PrivateRoute><RoomLobbyPage /></PrivateRoute>} />
+                </Routes>
+              </div>
+            </Router>
+          </UserContext.Provider>
+        </SocketContext.Provider>
+      </GameDataContext.Provider>
+    </RoomContext.Provider>
   );
 }
 

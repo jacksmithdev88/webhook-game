@@ -31,6 +31,6 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.post('/room/create', roomController.createRoom);
+router.post('/room', roomController.createRoom);
 
 module.exports = router;

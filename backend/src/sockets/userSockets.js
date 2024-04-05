@@ -4,9 +4,9 @@ const jwt = require('jsonwebtoken');
 const socketioJwt = require('socketio-jwt');
 const Game = require('../models/blackjack');
 
+
 module.exports = function(socket, io) { 
     socket.on('leaveRoom', async({roomCode, username}) => { 
-        console.log(`User wants to leave room ${username}`);
         let room = await Room.findOne({ code: roomCode });
         if(room) { 
             const player = room.players.find(player => player.username === username);
@@ -33,6 +33,8 @@ module.exports = function(socket, io) {
             }
 
             socket.leave(roomCode);
+
+            console.log(`User ${username} with IP ${socket.handshake.address} left room ${roomCode}`)
     
             io.to(roomCode).emit('userListUpdate', { admin: room.admin, players: room.players });
         }
@@ -120,5 +122,30 @@ module.exports = function(socket, io) {
                 io.to(roomCode).emit('userListUpdate', { admin: room.admin, players: room.players });
             }
         });
+    });
+
+    socket.on('createRoom', async({token, username}) => { 
+        let decoded = jwt.verify(token, process.env.SECRET_KEY);
+        let id = decoded.id.toString();
+        const roomData = {
+            admin: id,
+            players: [
+                {
+                    id: id,
+                    username: username
+                }
+            ]
+        };
+    
+        try {
+            const room = new Room(roomData);
+            await room.save(); 
+
+            console.log(`User ${username} with IP ${socket.handshake.address} created room ${room.code}`);
+            socket.emit('roomCreated', { roomCode: room.code });
+        } catch (error) {
+            console.log("Room not created");
+            console.error(error);
+        }
     });
 }
