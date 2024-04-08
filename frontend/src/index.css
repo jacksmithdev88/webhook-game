@@ -9,6 +9,7 @@ body {
     text-align: center;
     background-color: #c8dbd7;
     overflow: auto;
+    height: 100vh;
 }
 
 button { 

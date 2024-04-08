@@ -89,7 +89,7 @@ module.exports = function(socket, io) {
 
         await room.save();
         console.log(`User ${username} with IP ${socket.handshake.address} joined room ${roomCode}`);
-
+        socket.emit('gameValid');
         io.to(roomCode).emit('userListUpdate', { admin: room.admin, players: room.players });
     });
     

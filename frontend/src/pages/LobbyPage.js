@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext } from 'react';
 import { UserContext } from '../context/UserContext';
 import { useNavigate } from 'react-router-dom';
 import { SocketContext } from '../context/SocketContext';
@@ -8,7 +8,7 @@ const LobbyPage = () => {
     const { user, setUser } = useContext(UserContext);
     const navigate = useNavigate();
     const socket = useContext(SocketContext);
-    const { roomCode, setRoomCode } = useContext(RoomContext); 
+    const { setRoomCode } = useContext(RoomContext); 
 
     const logout = () => {
         setUser(null);
@@ -39,19 +39,16 @@ const LobbyPage = () => {
 
     return ( 
         <div className="flex w-full flex-col justify-center text-text text-xl items-center h-screen"> 
+            
             <div>
-                <h1 className="text-2xl font-bold m-5">Lobby</h1> 
-                <p className="m-4">Welcome to the lobby.</p> 
-
-
-                <div className='flex w-full flex-col my-5 flex-1 border-2 border-gray-300 p-8 rounded'>
+                <div className='flex w-full flex-col my-5 flex-1 border-2 border-gray-300 p-8 rounded-md'>
                     <div className="my-2">If you are going to be the host then please Create a Room.</div>
                     <button onClick={createRoom} className='w-1/2 m-auto text-text bg-button-main'>Create Room</button>
                 </div>
             </div>
 
             <div>
-                <div className='flex w-full flex-col my-5 flex-1 border-2 border-gray-300 p-8 rounded'>
+                <div className='flex w-full flex-col my-5 flex-1 border-2 border-gray-300 p-8 rounded-md'>
                     <div className="my-2">If you are going to be the guest then please Join a Room.</div>
                     <input type="text" id="roomName" className='w-full m-auto my-4 border rounded-md p-2 border-gray-600 bg-button-main text-text placeholder-text' name="roomName" />
                     <button className='w-1/2 m-auto bg-button-secondary text-text' onClick={joinRoom}>Join Room</button>
